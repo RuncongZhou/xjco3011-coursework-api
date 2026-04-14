@@ -3,7 +3,7 @@
 **Base URL (local default):** `http://127.0.0.1:8000`  
 **API prefix:** `/api/v1`  
 **Media type:** `application/json`  
-**Authentication:** none (coursework baseline; document as “not implemented” or extend in your report if you add API keys).
+**Authentication:** **Optional.** If the server is configured with environment variable `API_KEY`, then `POST`, `PATCH`, and `DELETE` must include header `X-API-Key: <same value>`. If `API_KEY` is not set (default for local development), writes do not require a key. `GET` endpoints are always public.
 
 ---
 
@@ -13,6 +13,8 @@
 - **Validation errors:** HTTP `422` with FastAPI’s default error shape (`detail` array).
 - **Not found:** HTTP `404`, body `{"detail": "Book not found"}`.
 - **Conflict (duplicate ISBN):** HTTP `409`, body `{"detail": "ISBN already exists for another book."}`.
+- **Unauthorized (API key):** HTTP `401` when `API_KEY` is set but `X-API-Key` is missing or wrong (writes only).
+- **Service unavailable:** HTTP `503` from `GET /health` if the database cannot be reached.
 
 ---
 
@@ -25,11 +27,15 @@
 ```json
 {
   "service": "Book Catalogue API",
+  "version": "1.1.0",
   "docs": "/docs",
   "openapi": "/openapi.json",
-  "api_base": "/api/v1"
+  "api_base": "/api/v1",
+  "write_protection": false
 }
 ```
+
+(`write_protection` is `true` when `API_KEY` is configured.)
 
 ---
 
@@ -40,7 +46,7 @@
 **Response `200`**
 
 ```json
-{ "status": "ok" }
+{ "status": "ok", "database": "connected" }
 ```
 
 ---
@@ -48,6 +54,8 @@
 ## 3. Create book
 
 ### `POST /api/v1/books`
+
+**Headers (when `API_KEY` is set):** `X-API-Key: <your API key>`
 
 **Request body**
 
@@ -110,9 +118,21 @@ Content-Type: application/json
 | `skip` | int | 0 | Offset |
 | `limit` | int | 20 | Page size (1–100) |
 | `genre` | string | — | Exact match on genre |
-| `author` | string | — | Case-insensitive substring match |
+| `author` | string | — | Case-insensitive substring match on author |
+| `q` | string | — | Search substring in **title**, **author**, or **ISBN** |
+| `sort` | string | `created_at` | One of: `created_at`, `title`, `rating`, `publication_year` |
+| `order` | string | `desc` | `asc` or `desc` |
 
-**Response `200`:** JSON array of book objects (same shape as in §3).
+**Response `200`:** paginated wrapper:
+
+```json
+{
+  "items": [ { "...": "same book object as §3" } ],
+  "total": 42,
+  "skip": 0,
+  "limit": 20
+}
+```
 
 ---
 
@@ -147,6 +167,8 @@ Content-Type: application/json
 
 ### `PATCH /api/v1/books/{book_id}`
 
+**Headers (when `API_KEY` is set):** `X-API-Key: <your API key>`
+
 Send only fields to change (all optional).
 
 **Example**
@@ -164,6 +186,8 @@ Send only fields to change (all optional).
 ## 8. Delete book
 
 ### `DELETE /api/v1/books/{book_id}`
+
+**Headers (when `API_KEY` is set):** `X-API-Key: <your API key>`
 
 **Response `204`:** no body.  
 **Response `404`:** not found.

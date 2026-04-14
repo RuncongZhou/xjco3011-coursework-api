@@ -1,10 +1,14 @@
 from fastapi.testclient import TestClient
 
+from app.config import settings
+
 
 def test_health(client: TestClient):
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+    body = r.json()
+    assert body["status"] == "ok"
+    assert body["database"] == "connected"
 
 
 def test_crud_flow(client: TestClient):
@@ -36,7 +40,11 @@ def test_crud_flow(client: TestClient):
 
     lst = client.get("/api/v1/books")
     assert lst.status_code == 200
-    assert len(lst.json()) == 1
+    data = lst.json()
+    assert data["total"] == 1
+    assert len(data["items"]) == 1
+    assert data["skip"] == 0
+    assert data["limit"] == 20
 
     stats = client.get("/api/v1/books/stats/summary")
     assert stats.status_code == 200
@@ -58,3 +66,30 @@ def test_duplicate_isbn_conflict(client: TestClient):
     assert client.post("/api/v1/books", json=payload).status_code == 201
     dup = client.post("/api/v1/books", json=payload)
     assert dup.status_code == 409
+
+
+def test_search_q_filters(client: TestClient):
+    client.post(
+        "/api/v1/books",
+        json={"title": "Alpha Guide", "author": "Zed", "genre": "Tech"},
+    )
+    client.post(
+        "/api/v1/books",
+        json={"title": "Beta", "author": "Yang", "genre": "Fiction"},
+    )
+    r = client.get("/api/v1/books", params={"q": "Alpha"})
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
+    assert "Alpha" in r.json()["items"][0]["title"]
+
+
+def test_write_requires_api_key_when_set(client: TestClient, monkeypatch):
+    monkeypatch.setattr(settings, "api_key", "coursework-secret")
+    r = client.post("/api/v1/books", json={"title": "No", "author": "Key"})
+    assert r.status_code == 401
+    ok = client.post(
+        "/api/v1/books",
+        json={"title": "Yes", "author": "Key"},
+        headers={"X-API-Key": "coursework-secret"},
+    )
+    assert ok.status_code == 201

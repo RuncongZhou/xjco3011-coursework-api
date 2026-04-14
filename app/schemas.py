@@ -1,6 +1,7 @@
 from datetime import datetime
+from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BookBase(BaseModel):
@@ -12,6 +13,14 @@ class BookBase(BaseModel):
     pages: int | None = Field(None, ge=0)
     rating: float | None = Field(None, ge=0, le=10)
     notes: str | None = None
+
+    @field_validator("isbn")
+    @classmethod
+    def strip_isbn(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        return s or None
 
 
 class BookCreate(BookBase):
@@ -28,6 +37,14 @@ class BookUpdate(BaseModel):
     rating: float | None = Field(None, ge=0, le=10)
     notes: str | None = None
 
+    @field_validator("isbn")
+    @classmethod
+    def strip_isbn(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        return s or None
+
 
 class BookRead(BookBase):
     model_config = ConfigDict(from_attributes=True)
@@ -35,6 +52,13 @@ class BookRead(BookBase):
     id: int
     created_at: datetime
     updated_at: datetime | None
+
+
+class BookListResponse(BaseModel):
+    items: list[BookRead]
+    total: int
+    skip: int
+    limit: int
 
 
 class Message(BaseModel):
@@ -45,3 +69,15 @@ class BookStats(BaseModel):
     total_books: int
     average_rating: float | None
     genres: dict[str, int]
+
+
+class SortField(str, Enum):
+    created_at = "created_at"
+    title = "title"
+    rating = "rating"
+    publication_year = "publication_year"
+
+
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"
