@@ -1,20 +1,22 @@
-# Book Catalogue API — Documentation
+# Book Catalogue API - API documentation
 
 **Base URL (local default):** `http://127.0.0.1:8000`  
 **API prefix:** `/api/v1`  
 **Media type:** `application/json`  
 **Authentication:** **Optional.** If the server is configured with environment variable `API_KEY`, then `POST`, `PATCH`, and `DELETE` must include header `X-API-Key: <same value>`. If `API_KEY` is not set (default for local development), writes do not require a key. `GET` endpoints are always public.
 
+**Version:** `1.2.0` (see `GET /` and `app/config.py`).
+
 ---
 
 ## Conventions
 
 - **Success:** JSON body with `Content-Type: application/json`.
-- **Validation errors:** HTTP `422` with FastAPI’s default error shape (`detail` array).
+- **Validation errors:** HTTP `422` with FastAPI default error shape (`detail` array).
 - **Not found:** HTTP `404`, body `{"detail": "Book not found"}`.
 - **Conflict (duplicate ISBN):** HTTP `409`, body `{"detail": "ISBN already exists for another book."}`.
-- **Unauthorized (API key):** HTTP `401` when `API_KEY` is set but `X-API-Key` is missing or wrong (writes only).
-- **Service unavailable:** HTTP `503` from `GET /health` if the database cannot be reached.
+- **Unauthorized (API key):** HTTP `401`, body `{"detail": "Missing or invalid X-API-Key header."}` when `API_KEY` is set but `X-API-Key` is missing or wrong (writes only).
+- **Service unavailable:** HTTP `503` from `GET /health` if the database cannot be reached, body `{"detail": "Database unavailable"}`.
 
 ---
 
@@ -50,6 +52,12 @@
 { "status": "ok", "database": "connected" }
 ```
 
+**Response `503`** (database unreachable)
+
+```json
+{ "detail": "Database unavailable" }
+```
+
 ---
 
 ## 3. Create book
@@ -62,14 +70,14 @@
 
 | Field | Type | Required | Notes |
 |--------|------|----------|--------|
-| `title` | string | yes | 1–500 chars |
-| `author` | string | yes | 1–300 chars |
-| `isbn` | string | no | unique if set |
-| `publication_year` | integer | no | 1000–2100 |
-| `genre` | string | no | e.g. Fiction, Technology |
-| `pages` | integer | no | ≥ 0 |
-| `rating` | number | no | 0–10 |
-| `notes` | string | no | free text |
+| `title` | string | yes | 1-500 chars |
+| `author` | string | yes | 1-300 chars |
+| `isbn` | string | no | max 20 chars; unique if set |
+| `publication_year` | integer | no | 1000-2100 |
+| `genre` | string | no | max 120 chars |
+| `pages` | integer | no | >= 0 |
+| `rating` | number | no | 0-10 |
+| `notes` | string | no | optional free text |
 
 **Example request**
 
@@ -117,10 +125,10 @@ Content-Type: application/json
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | `skip` | int | 0 | Offset |
-| `limit` | int | 20 | Page size (1–100) |
-| `genre` | string | — | Exact match on genre |
-| `author` | string | — | Case-insensitive substring match on author |
-| `q` | string | — | Search substring in **title**, **author**, or **ISBN** |
+| `limit` | int | 20 | Page size (1-100) |
+| `genre` | string | (none) | Exact match on genre |
+| `author` | string | (none) | Case-insensitive substring match on author |
+| `q` | string | (none) | Search substring in title, author, or ISBN (max 200 chars) |
 | `sort` | string | `created_at` | One of: `created_at`, `title`, `rating`, `publication_year` |
 | `order` | string | `desc` | `asc` or `desc` |
 
@@ -128,18 +136,22 @@ Content-Type: application/json
 
 ```json
 {
-  "items": [ { "...": "same book object as §3" } ],
+  "items": [ { "id": 1, "title": "...", "...": "same shape as create response" } ],
   "total": 42,
   "skip": 0,
   "limit": 20
 }
 ```
 
+Each element of `items` matches the book object returned by create (section 3) and get-one (section 6).
+
 ---
 
 ## 5. Statistics
 
 ### `GET /api/v1/books/stats/summary`
+
+Registered as a static path before `/{book_id}`, so `stats` is not interpreted as a numeric id.
 
 **Response `200`**
 
@@ -152,6 +164,8 @@ Content-Type: application/json
   }
 }
 ```
+
+(`average_rating` may be `null` if no ratings are stored.)
 
 ---
 
@@ -170,7 +184,7 @@ Content-Type: application/json
 
 **Headers (when `API_KEY` is set):** `X-API-Key: <your API key>`
 
-Send only fields to change (all optional).
+Send only fields to change (all optional). Field constraints match create (section 3) where applicable.
 
 **Example**
 
@@ -197,11 +211,11 @@ Send only fields to change (all optional).
 
 ## Interactive documentation
 
-With the server running, open **Swagger UI:** `/docs` — try requests directly from the browser.
+With the server running, open **Swagger UI** at `/docs` to try requests from the browser. **ReDoc** is at `/redoc`. Machine-readable schema: `/openapi.json` (see also `docs/openapi.json` from `scripts/export_openapi.py`).
 
 ---
 
 ## Export for submission
 
-- **PDF:** print `/docs` to PDF, or export this file from your editor, and commit as `docs/API_DOCUMENTATION.pdf` alongside this repository.
-- **OpenAPI JSON:** run `python scripts/export_openapi.py` → `docs/openapi.json`.
+- **PDF:** print `/docs` to PDF, export this Markdown from your editor, or run `pandoc docs/API_DOCUMENTATION.md -o docs/API_DOCUMENTATION.pdf` if Pandoc is installed. Commit `docs/API_DOCUMENTATION.pdf` if your brief requires a PDF in the repo.
+- **OpenAPI JSON:** `python scripts/export_openapi.py` writes `docs/openapi.json`.
