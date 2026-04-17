@@ -1,4 +1,5 @@
 from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas

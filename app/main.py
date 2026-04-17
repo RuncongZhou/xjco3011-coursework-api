@@ -10,6 +10,8 @@ from app.config import settings
 from app.database import Base, engine, get_db
 from app.routers import books
 
+REPO_URL = "https://github.com/RuncongZhou/xjco3011-coursework-api"
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -28,6 +30,13 @@ app = FastAPI(
     ),
     version=settings.app_version,
     lifespan=lifespan,
+    contact={
+        "name": "XJCO3011 coursework (individual)",
+        "url": REPO_URL,
+    },
+    license_info={
+        "name": "Academic coursework — see repository README for terms.",
+    },
 )
 
 app.add_middleware(
@@ -46,6 +55,7 @@ def root():
     return {
         "service": settings.app_name,
         "version": settings.app_version,
+        "repository": REPO_URL,
         "docs": "/docs",
         "openapi": "/openapi.json",
         "api_base": "/api/v1",

@@ -4,6 +4,8 @@ REST API for managing a **book catalogue** with full **CRUD** on a **SQLite** da
 
 **Repository:** [https://github.com/RuncongZhou/xjco3011-coursework-api](https://github.com/RuncongZhou/xjco3011-coursework-api)
 
+[![CI](https://github.com/RuncongZhou/xjco3011-coursework-api/actions/workflows/ci.yml/badge.svg)](https://github.com/RuncongZhou/xjco3011-coursework-api/actions/workflows/ci.yml)
+
 ## Features
 
 - One main data model: `Book` (title, author, ISBN, year, genre, pages, rating, notes).
@@ -16,7 +18,9 @@ REST API for managing a **book catalogue** with full **CRUD** on a **SQLite** da
 - `/health` checks database connectivity (`database: connected`).
 - Interactive docs: Swagger UI at `/docs`, ReDoc at `/redoc`, OpenAPI schema at `/openapi.json`.
 - Optional sample data via `scripts/seed_books.py`.
-- Automated tests with `pytest`.
+- Automated tests with `pytest` and **GitHub Actions CI** (runs the suite on every push to `main`).
+- Optional **Docker** image for deployment-style demos (`Dockerfile`, `docker-compose.yml`).
+- **Changelog** and **data / licensing notes** for assessors (`CHANGELOG.md`, `docs/DATA_SOURCES.md`).
 
 ## Requirements
 
@@ -74,6 +78,26 @@ Then send header `X-API-Key: choose-a-long-random-string` on `POST`, `PATCH`, an
 pytest
 ```
 
+### Version control & CI (for the oral + report)
+
+- Use **Git** with **regular commits** (clear messages). Your history appears under GitHub → **Commits**.
+- **GitHub Actions** runs the workflow in `.github/workflows/ci.yml` on each push; open **Actions** to show that automated tests passed (green check).
+
+### Docker (optional)
+
+If you have Docker Desktop installed:
+
+```bash
+docker compose up --build
+```
+
+API: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) — database file is persisted under `./data` via a volume.
+
+### Changelog & seed data citation
+
+- **`CHANGELOG.md`** — version-to-version summary (useful for slides).
+- **`docs/DATA_SOURCES.md`** — how seed metadata relates to published works / coursework citation expectations.
+
 ## API documentation (coursework submission)
 
 The brief asks for API documentation **referenced from the README as a PDF**. You can satisfy this in either of these ways:
@@ -107,6 +131,7 @@ Full request/response examples are in `docs/API_DOCUMENTATION.md` and in the int
 ## Project layout
 
 ```
+.github/workflows/  # CI (pytest on push)
 app/
   main.py          # FastAPI app, CORS, lifespan (creates tables)
   config.py        # Settings (env / .env)
@@ -117,9 +142,12 @@ app/
   deps.py          # Optional API-key dependency for writes
   routers/books.py # HTTP routes
 data/              # SQLite file created at runtime (gitignored except .gitkeep)
-docs/              # Human-readable API doc + exported OpenAPI
+docs/              # Human-readable API doc + data sources notes
 scripts/           # Seed + OpenAPI export
 tests/             # Pytest
+Dockerfile         # Optional container deployment
+docker-compose.yml # Local stack with volume for SQLite
+CHANGELOG.md       # Release notes for assessors
 ```
 
 ## Licence

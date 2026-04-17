@@ -27,7 +27,8 @@
 ```json
 {
   "service": "Book Catalogue API",
-  "version": "1.1.0",
+  "version": "1.2.0",
+  "repository": "https://github.com/RuncongZhou/xjco3011-coursework-api",
   "docs": "/docs",
   "openapi": "/openapi.json",
   "api_base": "/api/v1",

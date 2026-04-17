@@ -3,6 +3,15 @@ from fastapi.testclient import TestClient
 from app.config import settings
 
 
+def test_root_exposes_repository_link(client: TestClient):
+    r = client.get("/")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["service"] == settings.app_name
+    assert "github.com" in body["repository"]
+    assert body["version"] == settings.app_version
+
+
 def test_health(client: TestClient):
     r = client.get("/health")
     assert r.status_code == 200
@@ -55,6 +64,37 @@ def test_crud_flow(client: TestClient):
 
     missing = client.get(f"/api/v1/books/{book_id}")
     assert missing.status_code == 404
+
+
+def test_get_unknown_book_returns_404(client: TestClient):
+    r = client.get("/api/v1/books/999999")
+    assert r.status_code == 404
+
+
+def test_validation_error_on_empty_title(client: TestClient):
+    r = client.post("/api/v1/books", json={"title": "", "author": "A"})
+    assert r.status_code == 422
+
+
+def test_stats_empty_database(client: TestClient):
+    r = client.get("/api/v1/books/stats/summary")
+    assert r.status_code == 200
+    j = r.json()
+    assert j["total_books"] == 0
+    assert j["average_rating"] is None
+    assert j["genres"] == {}
+
+
+def test_pagination_skip_limit(client: TestClient):
+    for i in range(3):
+        client.post(
+            "/api/v1/books",
+            json={"title": f"P{i}", "author": "Author"},
+        )
+    page = client.get("/api/v1/books", params={"skip": 1, "limit": 1})
+    assert page.status_code == 200
+    assert page.json()["total"] == 3
+    assert len(page.json()["items"]) == 1
 
 
 def test_duplicate_isbn_conflict(client: TestClient):
