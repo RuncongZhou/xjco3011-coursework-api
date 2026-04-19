@@ -105,6 +105,8 @@ The brief asks for API documentation **referenced from the README as a PDF**. Yo
 1. **Print Swagger to PDF:** open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) in the browser → Print → Save as PDF → commit as e.g. `docs/API_DOCUMENTATION.pdf`.
 2. **Use the Markdown companion:** edit if needed, then export `docs/API_DOCUMENTATION.md` to PDF (VS Code / Word / Pandoc), and commit as `docs/API_DOCUMENTATION.pdf`.
 
+The repository includes **`docs/API_DOCUMENTATION.pdf`** (generated from `docs/API_DOCUMENTATION.md`) and **`docs/openapi.json`** (run `python scripts/export_openapi.py` to refresh after API changes).
+
 Generate machine-readable OpenAPI JSON (useful for reports):
 
 ```bash
