@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from starlette.responses import Response
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -48,6 +49,12 @@ app.add_middleware(
 )
 
 app.include_router(books.router, prefix="/api/v1")
+
+
+@app.head("/", tags=["meta"])
+def root_head() -> Response:
+    """Some load balancers probe with HEAD; avoid 405 noise in logs."""
+    return Response(status_code=200)
 
 
 @app.get("/", tags=["meta"])

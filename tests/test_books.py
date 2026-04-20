@@ -3,6 +3,11 @@ from fastapi.testclient import TestClient
 from app.config import settings
 
 
+def test_root_head_ok(client: TestClient):
+    r = client.head("/")
+    assert r.status_code == 200
+
+
 def test_root_exposes_repository_link(client: TestClient):
     r = client.get("/")
     assert r.status_code == 200
