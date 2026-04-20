@@ -20,6 +20,12 @@ def test_health(client: TestClient):
     assert body["database"] == "connected"
 
 
+def test_healthz_alias(client: TestClient):
+    r = client.get("/healthz")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok", "database": "connected"}
+
+
 def test_crud_flow(client: TestClient):
     create = client.post(
         "/api/v1/books",

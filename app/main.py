@@ -64,6 +64,7 @@ def root():
 
 
 @app.get("/health", tags=["meta"])
+@app.get("/healthz", tags=["meta"])  # common platform default (e.g. Render) without dashboard edits
 def health(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
